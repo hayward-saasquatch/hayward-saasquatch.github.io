@@ -32,7 +32,6 @@
 <body>
 
 <h1>Widget Test Page</h1>
-<script>!function(a,b){a("squatch","https://d2rcp9ak152ke1.cloudfront.net/assets/javascripts/v2/squatch.min.js",b)}(function(a,b,c){var d,e,f;c["_"+a]={},c[a]={},c[a].ready=function(b){c["_" + a].ready =  c["_" + a].ready || [];c["_" + a].ready.push(b);},e=document.createElement("script"),e.async=1,e.src=b,f=document.getElementsByTagName("script")[0],f.parentNode.insertBefore(e,f)},this);</script>
 
 <button class="accordion"><i id="accordionArrow" class="arrow" style="transform: rotate(-45deg); -webkit-transform: rotate(-45deg);"></i>&nbsp;&nbsp;Widget Configuration</button>
 
@@ -40,14 +39,17 @@
 
 <form id="widgetForm" action="" method="get">
     Tenant alias: <input type="text" id="tenantAlias" name="tenantAlias"><br><br>
-    JWT: <input type="text" id="jwt" name="jwt"><br><br>
+    JWT: <textarea rows="8" cols="50" id="jwt" name="jwt"></textarea><br><br>
     Engagement Medium: <input type="text" id="engagementMedium" name="engagementMedium"><br><br>
     Program ID: <input type="text" id="programId" name="programId"><br><br>
     Widget ID: <input type="text" id="widgetId" name="widgetId"><br><br>
     No Widget?<input type="checkbox" id="isTrackingScript" name="isTrackingScript" value=isTrackingScript> <br><br>
-    Include meta tag for mobile scaling? <input type="checkbox" id="deviceWidthMeta" name="deviceWidthMeta" value=deviceWidthMeta> <br><br>
     
     User Object: <textarea rows="8" cols="50" id="userObject" name="userObject"></textarea><br><br>
+    
+    Include meta tag for mobile scaling? <input type="checkbox" id="deviceWidthMeta" name="deviceWidthMeta" value=deviceWidthMeta> <br><br>
+    squatch.js URL: <input type="text" id="squatchURL" name="squatchURL"><br><br>
+    Domain: (defaults to https://app.referralsaasquatch.com) <input type="text" id="domain" name="domain"><br><br>
     
     <input type="button" onclick="submitForm()" value="Submit form">
     
@@ -194,6 +196,19 @@ if (deviceWidthMeta == "deviceWidthMeta"){
   document.getElementById("deviceWidthMeta").checked = true;
 }
 
+var squatchURL = "https://d2rcp9ak152ke1.cloudfront.net/assets/javascripts/v2/squatch.min.js";
+var temp = document.getElementById("squatchURL");
+if (getQueryString('squatchURL')){
+  squatchURL = decodeURIComponent(getQueryString('squatchURL'));
+  temp.value = squatchURL;
+}
+
+!function(a,b){a("squatch",squatchURL,b)}(function(a,b,c){var d,e,f;c["_"+a]={},c[a]={},c[a].ready=function(b){c["_" + a].ready =  c["_" + a].ready || [];c["_" + a].ready.push(b);},e=document.createElement("script"),e.async=1,e.src=b,f=document.getElementsByTagName("script")[0],f.parentNode.insertBefore(e,f)},this);
+
+var temp = document.getElementById("domain");
+var domain = decodeURIComponent(getQueryString('domain'));
+temp.value = domain;
+
 if(engagementMedium == "EMBED"){
     var embedDiv = document.createElement("div"); 
     embedDiv.classList.add("squatchembed");
@@ -212,9 +227,16 @@ if(engagementMedium == "POPUP"){
 window.squatch.ready(function(){
 
   //configure squatch.js for the tenant you are using       
-  squatch.init({
+  
+  var squatchInitObj = {
       tenantAlias: tenantAlias
-  });
+  }
+  
+  if(domain){
+    squatchInitObj['domain'] = domain;
+  }
+  
+  squatch.init(squatchInitObj);
 
     var initObj = userObject;
   
@@ -235,6 +257,7 @@ window.squatch.ready(function(){
       }
   }
   
+  console.log(squatchInitObj);
   console.log(initObj);
 
   squatch.widgets().upsertUser(initObj).then(function(response) {
