@@ -41,7 +41,7 @@
     Tenant alias: <input type="text" id="tenantAlias" name="tenantAlias"><br><br>
     JWT: <textarea rows="8" cols="50" id="jwt" name="jwt"></textarea><br><br>
     Engagement Medium: <input type="text" id="engagementMedium" name="engagementMedium"><br><br>
-    Program ID: <input type="text" id="programId" name="programId"><br><br>
+    Program ID (GA-only): <input type="text" id="programId" name="programId"><br><br>
     Widget ID: <input type="text" id="widgetId" name="widgetId"><br><br>
     No Widget?<input type="checkbox" id="isTrackingScript" name="isTrackingScript" value=isTrackingScript> <br><br>
     
@@ -246,8 +246,8 @@ window.squatch.ready(function(){
   
   if(!isTrackingScript){
       initObj["engagementMedium"] = engagementMedium;
-      if(widgetId == "REFERRER"){
-          initObj["widgetType"] = "REFERRER";
+      if(widgetId == "REFERRER_WIDGET"){
+          initObj["widgetType"] = "REFERRER_WIDGET";
       }
       else if(widgetId == "CONVERSION_WIDGET"){
           initObj["widgetType"] = "CONVERSION_WIDGET";
