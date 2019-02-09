@@ -170,17 +170,18 @@ temp.value = widgetId;
 
 var temp = document.getElementById("userObject");
 var userObject = getQueryString('userObject');
-
-
-
 //console.log(getQueryString('userObject'));
 console.log(userObject);
 
-userObject = JSON.parse(decodeURIComponent(userObject));
-console.log(userObject);
-temp.value = JSON.stringify(userObject, null, 4);
-console.log(temp.value);
-
+if(userObject){
+  userObject = JSON.parse(decodeURIComponent(userObject));
+  console.log(userObject);
+  temp.value = JSON.stringify(userObject, null, 4);
+  console.log(temp.value);
+}
+else{
+  temp.value = JSON.stringify(JSON.parse('{"user":{"id": "","accountId":""}}'), null, 4);
+}
 
 var isTrackingScript = getQueryString('isTrackingScript');
 if (isTrackingScript == "isTrackingScript"){
@@ -207,7 +208,10 @@ if (getQueryString('squatchURL')){
 
 var temp = document.getElementById("domain");
 var domain = decodeURIComponent(getQueryString('domain'));
-temp.value = domain;
+if (domain && domain!="null"){
+  temp.value = domain;
+}
+
 
 if(engagementMedium == "EMBED"){
     var embedDiv = document.createElement("div"); 
@@ -255,6 +259,7 @@ window.squatch.ready(function(){
       else{
         initObj["widgetType"] = "p/" + programId + "/w/" + widgetId;
       }
+      console.log(initObj);
   }
   
   console.log(squatchInitObj);
