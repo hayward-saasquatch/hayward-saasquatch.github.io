@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <link rel="icon" href="data:,">
 <script>
     //pickup arguements from URL
     var getQueryString = function ( field, url ) {
@@ -39,17 +40,22 @@
 
 <form id="widgetForm" action="" method="get">
     Tenant alias: <input type="text" id="tenantAlias" name="tenantAlias"><br><br>
-    JWT: <textarea rows="8" cols="50" id="jwt" name="jwt"></textarea><br><br>
+    JWT: <textarea rows="8" style="width:100%;" id="jwt" name="jwt"></textarea><br><br>
     Engagement Medium: <input type="text" id="engagementMedium" name="engagementMedium"><br><br>
     Program ID (GA-only): <input type="text" id="programId" name="programId"><br><br>
     Widget ID: <input type="text" id="widgetId" name="widgetId"><br><br>
     No Widget?<input type="checkbox" id="isTrackingScript" name="isTrackingScript" value=isTrackingScript> <br><br>
     
-    User Object: <textarea rows="8" cols="50" id="userObject" name="userObject"></textarea><br><br>
+    User Object: <textarea rows="8" style="width:100%;" id="userObject" name="userObject"></textarea><br><br>
     
     Include meta tag for mobile scaling? <input type="checkbox" id="deviceWidthMeta" name="deviceWidthMeta" value=deviceWidthMeta> <br><br>
-    squatch.js URL: <input style="width:100%;" type="text" id="squatchURL" name="squatchURL"><br><br>
-    Domain: (defaults to https://app.referralsaasquatch.com) <input style="width:100%;" type="text" id="domain" name="domain"><br><br>
+    
+    squatch.js Version<br> 
+    <input type="radio" id="sqtVersion1" name="sqtVersion" value=1> squatch.js V1<br>
+    <input type="radio" id="sqtVersion2" name="sqtVersion" value=2 checked> squatch.js V2<br><br>
+    
+    squatch.js URL (only applied to squatch.js V2): <input style="width:100%;" type="text" id="squatchURL" name="squatchURL"><br><br>
+    Domain (only applied to squatch.js V2): (defaults to https://app.referralsaasquatch.com) <input style="width:100%;" type="text" id="domain" name="domain"><br><br>
     
     <input type="button" onclick="submitForm()" value="Submit form">
     
@@ -204,6 +210,16 @@ if (getQueryString('squatchURL')){
   temp.value = squatchURL;
 }
 
+var sqtVersion = getQueryString('sqtVersion');
+if (sqtVersion == 1){
+  document.getElementById("sqtVersion1").checked = true;
+  document.getElementById("sqtVersion2").checked = false;
+}
+if (sqtVersion == 2){
+  document.getElementById("sqtVersion2").checked = true;
+  document.getElementById("sqtVersion1").checked = false;
+}
+
 !function(a,b){a("squatch",squatchURL,b)}(function(a,b,c){var d,e,f;c["_"+a]={},c[a]={},c[a].ready=function(b){c["_" + a].ready =  c["_" + a].ready || [];c["_" + a].ready.push(b);},e=document.createElement("script"),e.async=1,e.src=b,f=document.getElementsByTagName("script")[0],f.parentNode.insertBefore(e,f)},this);
 
 var temp = document.getElementById("domain");
@@ -214,13 +230,16 @@ if (domain && domain!="null"){
 
 
 if(engagementMedium == "EMBED"){
-    var embedDiv = document.createElement("div"); 
+  console.log("loading embedded widget");
+    var embedDiv = document.createElement("div");
+    embedDiv.id = "squatchembed"
     embedDiv.classList.add("squatchembed");
     
     document.body.appendChild(embedDiv);
 }
 
 if(engagementMedium == "POPUP"){
+  
     var popupButton = document.createElement("button"); 
     popupButton.classList.add("squatchpop");
     popupButton.innerText = "Referral Widget"
@@ -228,49 +247,105 @@ if(engagementMedium == "POPUP"){
 }
 
 
-window.squatch.ready(function(){
-
-  //configure squatch.js for the tenant you are using       
+if (sqtVersion == 1){
   
-  var squatchInitObj = {
-      tenantAlias: tenantAlias
+  var initObj = {};
+  
+  initObj['tenant_alias'] = tenantAlias;
+  initObj['account_id'] = userObject['user']['accountId'];
+  if (userObject['user'].hasOwnProperty("paymentProviderId")){
+    initObj['payment_provider_id'] = userObject['user']['paymentProviderId']
+  }else {  
+    initObj['payment_provider_id'] = null 
+    
   }
   
-  if(domain){
-    squatchInitObj['domain'] = domain;
+  initObj['user_id'] = userObject['user']['id'];
+  initObj['email'] = userObject['user']['email'];
+  initObj['first_name'] = userObject['user']['firstName'];
+
+  if (userObject['user'].hasOwnProperty("lastName")){
+    initObj['last_name'] = userObject['user']['lastName'];
+  }
+  if (userObject['user'].hasOwnProperty("locale")){
+    initObj['locale'] = userObject['user']['locale'];
+  }
+  if (userObject['user'].hasOwnProperty("referralCode")){
+    initObj['user_referral_code'] = userObject['user']['referralCode'];
+  }
+  if (userObject['user'].hasOwnProperty("referredBy")){
+    if (userObject['user']['referredBy'].hasOwnProperty("code")){
+      initObj['referral_code'] = userObject['user']['referredBy']['code'];
+    }
   }
   
-  squatch.init(squatchInitObj);
+  
 
-    var initObj = userObject;
+  initObj['mode'] = engagementMedium;
   
   if(jwt){
       initObj["jwt"] = jwt;
   }
   
-  if(!isTrackingScript){
-      initObj["engagementMedium"] = engagementMedium;
-      if(widgetId == "REFERRER_WIDGET"){
-          initObj["widgetType"] = "REFERRER_WIDGET";
-      }
-      else if(widgetId == "CONVERSION_WIDGET"){
-          initObj["widgetType"] = "CONVERSION_WIDGET";
-      }
-      else{
-        initObj["widgetType"] = "p/" + programId + "/w/" + widgetId;
-      }
-      console.log(initObj);
-  }
-  
-  console.log(squatchInitObj);
-  console.log(initObj);
+  var _sqh = _sqh || [];
 
-  squatch.widgets().upsertUser(initObj).then(function(response) {
-    user = response.user;
-  }).catch(function(error){
-    console.log(error);
-  }); 
-});
+  // Push user details for a user who is logged in to your system
+  _sqh.push(['init', initObj ]);
+  
+  // Include squatch.js
+  (function(){function l(){var s=document.createElement("script");s.type="text/javascript";s.async=true;s.src=location.protocol+"//d2rcp9ak152ke1.cloudfront.net/assets/javascripts/squatch.min.js";var t=document.getElementsByTagName("script")[0];t.parentNode.insertBefore(s,t)}if(window.attachEvent){window.attachEvent("onload",l)}else{window.addEventListener("load",l,false)}})();
+    
+}
+
+if (sqtVersion == 2){
+
+  window.squatch.ready(function(){
+
+    //configure squatch.js for the tenant you are using       
+    
+    var squatchInitObj = {
+        tenantAlias: tenantAlias
+    }
+    
+    if(domain){
+      squatchInitObj['domain'] = domain;
+    }
+    
+    squatch.init(squatchInitObj);
+  
+      var initObj = userObject;
+    
+    if(jwt){
+        initObj["jwt"] = jwt;
+    }
+    
+    if(!isTrackingScript){
+        initObj["engagementMedium"] = engagementMedium;
+        if(widgetId == "REFERRER_WIDGET"){
+            initObj["widgetType"] = "REFERRER_WIDGET";
+        }
+        else if(widgetId == "CONVERSION_WIDGET"){
+            initObj["widgetType"] = "CONVERSION_WIDGET";
+        }
+        else{
+          initObj["widgetType"] = "p/" + programId + "/w/" + widgetId;
+        }
+        console.log(initObj);
+    }
+    
+    console.log(squatchInitObj);
+    console.log(initObj);
+  
+    squatch.widgets().upsertUser(initObj).then(function(response) {
+      user = response.user;
+    }).catch(function(error){
+      console.log(error);
+    }); 
+  });
+
+}
+
+
 
 
 </script>
