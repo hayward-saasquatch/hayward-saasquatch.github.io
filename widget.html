@@ -45,6 +45,7 @@
     Program ID (GA-only): <input type="text" id="programId" name="programId"><br><br>
     Widget ID: <input type="text" id="widgetId" name="widgetId"><br><br>
     No Widget?<input type="checkbox" id="isTrackingScript" name="isTrackingScript" value=isTrackingScript> <br><br>
+    Cookie User?<input type="checkbox" id="isCookieUser" name="isCookieUser" value=isCookieUser> <br><br>
     
     User Object: <textarea rows="8" style="width:100%;" id="userObject" name="userObject"></textarea><br><br>
     
@@ -194,9 +195,9 @@ if (isTrackingScript == "isTrackingScript"){
     document.getElementById("isTrackingScript").checked = true;
 }
 
-var isTrackingScript = getQueryString('isTrackingScript');
-if (isTrackingScript == "isTrackingScript"){
-    document.getElementById("isTrackingScript").checked = true;
+var isCookieUser = getQueryString('isCookieUser');
+if (isCookieUser == "isCookieUser"){
+    document.getElementById("isCookieUser").checked = true;
 }
 
 if (deviceWidthMeta == "deviceWidthMeta"){
@@ -313,13 +314,20 @@ if (sqtVersion == 2){
     
     squatch.init(squatchInitObj);
   
-      var initObj = userObject;
+    var initObj = userObject;
+    
+    if (isCookieUser){
+          
+      initObj = {};
+      
+    }
     
     if(jwt){
         initObj["jwt"] = jwt;
     }
     
     if(!isTrackingScript){
+
         initObj["engagementMedium"] = engagementMedium;
         if(widgetId == "REFERRER_WIDGET"){
             initObj["widgetType"] = "REFERRER_WIDGET";
@@ -335,12 +343,27 @@ if (sqtVersion == 2){
     
     console.log(squatchInitObj);
     console.log(initObj);
-  
-    squatch.widgets().upsertUser(initObj).then(function(response) {
-      user = response.user;
-    }).catch(function(error){
-      console.log(error);
-    }); 
+    
+    if (!isCookieUser){
+      
+      console.log("is not cookie user");
+      squatch.widgets().upsertUser(initObj).then(function(response) {
+        user = response.user;
+      }).catch(function(error){
+        console.log(error);
+      }); 
+    }
+    else if (isCookieUser){
+      
+      console.log("is cookie user");
+      console.log(initObj)
+      squatch.widgets().createCookieUser(initObj).then(function(response) {
+        user = response.user;
+      }).catch(function(error){
+        console.log(error);
+      }); 
+    }
+    
   });
 
 }
